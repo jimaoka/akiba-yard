@@ -50,8 +50,8 @@ app.get('/position/latest', function(request, response) {
   collection(COLNAME).group(
     ['id'],
     {},
-    {'maxValue': 0},
-    "function(obj,prev){ if(prev.maxValue<obj.value){ prev.maxValue = obj.value }}",
+    {'latestTime': 0, 'lat': 0, 'lon': 0},
+    "function(obj,prev){ if(prev.latestTime<obj.timestamp){ prev.latestTime = obj.timestamp; prev.lat = obj.lat; prev.lon = obj.lon }}",
     (err, docs) => {
       console.log(JSON.stringify(docs))
       response.send(docs)
