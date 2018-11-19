@@ -32,14 +32,15 @@ var collection = function(name) {
 // アプリから位置情報を送るための受け口
 app.post('/position', function(request, response) {
   var req = JSON.stringify(request.body)
+  // リクエストをインサートして内容を返す
   collection(COLNAME).insertOne(request.body).then(function(r) {
     response.send(req)
   })
 })
 
-// アプリから他端末を含めた位置情報を取得するための受け口
+// アプリから他端末を含めた位置情報をすべて取得するための受け口
 app.get('/position', function(request, response) {
-  var urlParams = url.parse(request.url, true)
+  // すべて返す
   collection(COLNAME).find().toArray(function(err, docs){
       response.send(docs)
   })
@@ -47,6 +48,7 @@ app.get('/position', function(request, response) {
 
 // アプリから他端末を含めた位置情報を取得するための受け口(一つだけ返す)
 app.get('/position/latest', function(request, response) {
+  // ID毎に最新のものをクエリして返す
   collection(COLNAME).group(
     ['id'],
     {},
@@ -57,26 +59,6 @@ app.get('/position/latest', function(request, response) {
       response.send(docs)
     }
   )
-  /*
-  collection(COLNAME).aggregate([
-    {
-      $sort: { timestamp: -1 }
-    },
-    {
-      $group: {
-        _id: "$id",
-        targets: { $push: "$_id" },
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $match: { count: { $gt: 1 } }
-    },
-  ]).toArray().then((docs) => {
-    console.log(JSON.stringify(docs))
-    response.send(docs)
-  })
-  */
 })
 
 // Start listen request
