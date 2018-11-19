@@ -31,8 +31,9 @@ var collection = function(name) {
 
 // アプリから位置情報を送るための受け口
 app.post('/position', function(request, response) {
+  var req = JSON.stringify(request.body)
   collection(COLNAME).insertOne(request.body).then(function(r) {
-    response.send(r)
+    response.send(req)
   })
 })
 
