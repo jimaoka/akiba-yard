@@ -46,10 +46,16 @@ app.get('/position', function(request, response) {
 
 // アプリから他端末を含めた位置情報を取得するための受け口(一つだけ返す)
 app.get('/position/latest', function(request, response) {
-  var urlParams = url.parse(request.url, true)
-  collection(COLNAME).distinct('id', function(err, docs){
-    response.send(docs)
-  })
+  collection(COLNAME).group(
+    ['id'],
+    {},
+    {'maxValue': 0},
+    "function(obj,prev){ if(prev.maxValue<obj.value){ prev.maxValue = obj.value }}",
+    (err, docs) => {
+      console.log(JSON.stringify(docs))
+      response.send(docs)
+    }
+  )
   /*
   collection(COLNAME).aggregate([
     {
