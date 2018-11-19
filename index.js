@@ -6,7 +6,7 @@ const url = require('url')
 
 // 定数
 const mongoUri = process.env.MONGODB_URI
-const DBNAME = 'heroku_p4785jj6'
+const DBNAME = process.env.MONGODB_DBNAME
 const COLNAME = 'akibaTest'
 const testData = require('./resource/testData.json')
 const testDataLatest = require('./resource/testDataLatest.json')
@@ -31,8 +31,9 @@ var collection = function(name) {
 
 // アプリから位置情報を送るための受け口
 app.post('/position', function(request, response) {
+  var req = JSON.stringify(request.body)
   collection(COLNAME).insertOne(request.body).then(function(r) {
-    response.send(r)
+    response.send(req)
   })
 })
 
@@ -46,10 +47,16 @@ app.get('/position', function(request, response) {
 
 // アプリから他端末を含めた位置情報を取得するための受け口(一つだけ返す)
 app.get('/position/latest', function(request, response) {
-  var urlParams = url.parse(request.url, true)
-  collection(COLNAME).distinct('id', function(err, docs){
-    response.send(docs)
-  })
+  collection(COLNAME).group(
+    ['id'],
+    {},
+    {'latestTime': 0, 'lat': 0, 'lon': 0},
+    "function(obj,prev){ if(prev.latestTime<obj.timestamp){ prev.latestTime = obj.timestamp; prev.lat = obj.lat; prev.lon = obj.lon }}",
+    (err, docs) => {
+      console.log(JSON.stringify(docs))
+      response.send(docs)
+    }
+  )
   /*
   collection(COLNAME).aggregate([
     {
