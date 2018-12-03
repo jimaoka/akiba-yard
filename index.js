@@ -108,7 +108,7 @@ app.get('/games/:gameid/position', function(request, response) {
   var gameid = request.params.gameid
   var q = { gameid: gameid }
   // すべて返す
-  collection(COLNAME).findOne(q).toArray(function(r){
+  collection(COLNAME).findOne(q).then(function(r){
     response.send(r)
   })
 })
