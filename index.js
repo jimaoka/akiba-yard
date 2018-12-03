@@ -73,33 +73,43 @@ app.get('/games/:gameid/info', function(request, response) {
   })
 })
 
-/*
-// /games/:gameid/position (POST) TODO
+// /games/:gameid/position (POST)
 app.post('/games/:gameid/position', function(request, response) {
+  var gameid = request.params.gameid
   var q = { gameid: gameid }
+  var req = request.body
   // 既存ゲームの取得
   collection(COLNAME).findOne(q).then(function(r) {
     if(r){  // 存在する場合
-      collection(COLNAME).updateOne(q, r).then(function(r2) {
-        response.send(r2)
+      r.positions.police.map( function(v){
+        if(v.nickname == req.nickname){
+          v.timestamp = req.timestamp
+          v.lat = req.lat
+          v.lon = req.lon
+        }
+      })
+      if(r.positions.criminal.nickname == nickname){
+          r.positions.criminal.timestamp = req.timestamp
+          r.positions.criminal.lat = req.lat
+          r.positions.criminal.lon = req.lon
+      }
+      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
+        response.send(r)
       })
     } else {  // 存在しない場合
       response.status(404)
       response.send({ error: "Game Not Found" })
     }
   })
-  var req = JSON.stringify(request.body)
-  // リクエストをインサートして内容を返す
-  collection(COLNAME).insertOne(request.body).then(function(r) {
-    response.send(req)
-  })
 })
 
 // /games/:gameid/position (GET)
 app.get('/games/:gameid/position', function(request, response) {
+  var gameid = request.params.gameid
+  var q = { gameid: gameid }
   // すべて返す
-  collection(COLNAME).find().toArray(function(err, docs){
-    response.send(docs)
+  collection(COLNAME).findOne(q).toArray(function(r){
+    response.send(r)
   })
 })
 
@@ -135,7 +145,6 @@ app.get('/position/latest', function(request, response) {
     }
   )
 })
-*/
 
 // Start listen request
 app.listen(app.get('port'), function() {
