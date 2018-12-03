@@ -7,7 +7,7 @@ const url = require('url')
 // 定数
 const mongoUri = process.env.MONGODB_URI
 const DBNAME = process.env.MONGODB_DBNAME
-const COLNAME = 'akibaTest'
+const COLNAME = 'games'
 const testData = require('./resource/testData.json')
 const testDataLatest = require('./resource/testDataLatest.json')
 const MongoClient = mongodb.MongoClient
@@ -25,12 +25,67 @@ MongoClient.connect(mongoUri, (err, client) => {
   console.log("Connected successfully to server")
   database=client.db(DBNAME)
 })
-var collection = function(name) {
-  return database.collection(name)
+var collection = function(name, options) {
+  return database.collection(name, options)
 }
 
-// アプリから位置情報を送るための受け口
-app.post('/position', function(request, response) {
+// /games/:gameid/join (POST)
+app.post('/games/:gameid/join', function(request, response) {
+  var q = { gameid: gameid }
+  var nickname = request.body.nickname
+  // 既存ゲームの取得
+  collection(COLNAME).findOne(q).then(function(r) {
+    if(r){  // 存在する場合
+      r.members.push(nickname)
+      collection(COLNAME).updateOne(q, r).then(function(r2) {
+        response.send(r)
+      })
+    } else {  // 存在しない場合
+      var game = {
+        gameid: gameid,
+        members: [nickname],
+        criminal: "",
+        time: Date.now(),
+        status: "2"
+      }
+      collection(COLNAME).insertOne(game).then(function(r2) {
+        response.send(game)
+      })
+    }
+  })
+})
+
+// /games/:gameid/info (GET)
+app.get('/games/:gameid/info', function(request, response) {
+  var q = { gameid: gameid }
+  // 既存ゲームの取得
+  collection(COLNAME).findOne(q).then(function(r) {
+    if(r){  // 存在する場合
+      collection(COLNAME).updateOne(q, r).then(function(r2) {
+        response.send(r2)
+      })
+    } else {  // 存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  })
+})
+
+/*
+// /games/:gameid/position (POST) TODO
+app.post('/games/:gameid/position', function(request, response) {
+  var q = { gameid: gameid }
+  // 既存ゲームの取得
+  collection(COLNAME).findOne(q).then(function(r) {
+    if(r){  // 存在する場合
+      collection(COLNAME).updateOne(q, r).then(function(r2) {
+        response.send(r2)
+      })
+    } else {  // 存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  })
   var req = JSON.stringify(request.body)
   // リクエストをインサートして内容を返す
   collection(COLNAME).insertOne(request.body).then(function(r) {
@@ -38,11 +93,29 @@ app.post('/position', function(request, response) {
   })
 })
 
-// アプリから他端末を含めた位置情報をすべて取得するための受け口
-app.get('/position', function(request, response) {
+// /games/:gameid/position (GET)
+app.get('/games/:gameid/position', function(request, response) {
   // すべて返す
   collection(COLNAME).find().toArray(function(err, docs){
-      response.send(docs)
+    response.send(docs)
+  })
+})
+
+// /games/:gameid/catch (POST)
+app.post('/games/:gameid/catch', function(request, response) {
+  var req = JSON.stringify(request.body)
+  // リクエストをインサートして内容を返す
+  collection(COLNAME).insertOne(request.body).then(function(r) {
+    response.send(req)
+  })
+})
+
+// /games/:gameid/abort (POST)
+app.post('/games/:gameid/abort', function(request, response) {
+  var req = JSON.stringify(request.body)
+  // リクエストをインサートして内容を返す
+  collection(COLNAME).insertOne(request.body).then(function(r) {
+    response.send(req)
   })
 })
 
@@ -60,6 +133,7 @@ app.get('/position/latest', function(request, response) {
     }
   )
 })
+*/
 
 // Start listen request
 app.listen(app.get('port'), function() {
