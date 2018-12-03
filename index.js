@@ -63,9 +63,7 @@ app.get('/games/:gameid/info', function(request, response) {
   // 既存ゲームの取得
   collection(COLNAME).findOne(q).then(function(r) {
     if(r){  // 存在する場合
-      collection(COLNAME).updateOne(q, r).then(function(r2) {
-        response.send(r2)
-      })
+      response.send(r)
     } else {  // 存在しない場合
       response.status(404)
       response.send({ error: "Game Not Found" })
