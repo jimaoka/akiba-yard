@@ -31,7 +31,8 @@ var collection = function(name, options) {
 
 // /games/:gameid/join (POST)
 app.post('/games/:gameid/join', function(request, response) {
-  var q = { gameid: request.params.gameid }
+  var gameid = request.params.gameid
+  var q = { gameid: gameid }
   var nickname = request.body.nickname
   // 既存ゲームの取得
   collection(COLNAME).findOne(q).then(function(r) {
@@ -57,7 +58,8 @@ app.post('/games/:gameid/join', function(request, response) {
 
 // /games/:gameid/info (GET)
 app.get('/games/:gameid/info', function(request, response) {
-  var q = { gameid: request.params.gameid }
+  var gameid = request.params.gameid
+  var q = { gameid: gameid }
   // 既存ゲームの取得
   collection(COLNAME).findOne(q).then(function(r) {
     if(r){  // 存在する場合
