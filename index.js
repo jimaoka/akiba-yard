@@ -36,7 +36,9 @@ app.post('/games/:gameid/join', function(request, response) {
   var nickname = request.body.nickname
   // 既存ゲームの取得
   collection(COLNAME).findOne(q).then(function(r) {
-    if(r && r.status == "2"){  // 存在する場合
+    if(r && r.status != "2"){  // 存在するがステータスが異なる場合
+      response.send(r)
+    } else if(r){  // 募集中のゲームが存在する場合
       r.members.push(nickname)
       collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
         response.send(r)
