@@ -38,7 +38,7 @@ app.post('/games/:gameid/join', function(request, response) {
   collection(COLNAME).findOne(q).then(function(r) {
     if(r){  // 存在する場合
       r.members.push(nickname)
-      collection(COLNAME).updateOne(q, r).then(function(r2) {
+      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
         response.send(r)
       })
     } else {  // 存在しない場合
