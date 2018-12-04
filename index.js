@@ -85,14 +85,14 @@ var processGame = function(gameid, ifGame, ifNoGame){
 
 // /games/:gameid/join (POST)
 app.post('/games/:gameid/join', function(request, response) {
-  var nickname = request.body.nickname
+  var req = request.body
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       if(r.status != "2"){  // ステータスが異なる場合
         response.send(r)
       } else if(r){  // 募集中のゲームが存在する場合
-        r.members.push(nickname)
+        r.members.push(req.nickname)
         collection(COLNAME).updateOne({gameid:gameid}, {$set: r}).then(function(r2) {
           response.send(r)
         })
@@ -101,7 +101,7 @@ app.post('/games/:gameid/join', function(request, response) {
     (gameid, r)=>{ // ゲームが存在しない場合
       var game = {
         gameid: gameid,
-        members: [nickname],
+        members: [req.nickname],
         criminal: "",
         time: Date.now(),
         status: "2"
@@ -115,6 +115,7 @@ app.post('/games/:gameid/join', function(request, response) {
 
 // /games/:gameid/info (GET)
 app.get('/games/:gameid/info', function(request, response) {
+  var req = request.body
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
@@ -163,20 +164,17 @@ app.post('/games/:gameid/position', function(request, response) {
 
 // /games/:gameid/position (GET)
 app.get('/games/:gameid/position', function(request, response) {
-  var gameid = request.params.gameid
-  var q = { gameid: gameid }
-  // 既存ゲームの取得
-  collection(COLNAME).findOne(q).then(function(r) {
-    if(r){  // 存在する場合
-      statusCheck(r)
-      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
-        response.send(r)
-      })
-    } else {  // 存在しない場合
+  var req = request.body
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      response.send(r)
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
       response.status(404)
       response.send({ error: "Game Not Found" })
     }
-  })
+  )
 })
 
 // /games/:gameid/catch (POST)
