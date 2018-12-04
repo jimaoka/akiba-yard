@@ -29,6 +29,42 @@ var collection = function(name, options) {
   return database.collection(name, options)
 }
 
+// ステータス遷移のチェック
+var statusCheck = function(r) {
+  // チェック用の関数
+  var transition = {
+    1: function(r) {
+      // Nothing
+    }, 
+    2: function(r) {
+      if(Date.now() - r.time > 60000){  // 60s以上経過してたらゲーム開始処理
+        r.status = "3"
+        var criminalPos = Math.floor( Math.random() * (r.members.length) )
+        var criminal = r.members[criminalPos]
+        var police = []
+        r.members.foreach(function(v){
+          if(v != criminal){
+            police.push({
+              nickname: v,
+              lat: "",
+              lon: ""
+            })
+          }
+        })
+        var positions = {
+          police: police,
+          criminal: {nickname: criminal, lat: "", lon: ""}
+        }
+        r["positions"] = positions
+      }
+    },
+    3: function(r){},
+    4: function(r){},
+    5: function(r){}
+  }
+  transition[r.status](r)
+}
+
 // /games/:gameid/join (POST)
 app.post('/games/:gameid/join', function(request, response) {
   var gameid = request.params.gameid
@@ -65,6 +101,7 @@ app.get('/games/:gameid/info', function(request, response) {
   // 既存ゲームの取得
   collection(COLNAME).findOne(q).then(function(r) {
     if(r){  // 存在する場合
+      statusCheck(r)
       response.send(r)
     } else {  // 存在しない場合
       response.status(404)
@@ -80,7 +117,7 @@ app.post('/games/:gameid/position', function(request, response) {
   var req = request.body
   // 既存ゲームの取得
   collection(COLNAME).findOne(q).then(function(r) {
-    if(r){  // 存在する場合
+    if(r && r.status == "3"){  // 存在する場合
       r.positions.police.map( function(v){
         if(v.nickname == req.nickname){
           v.timestamp = req.timestamp
