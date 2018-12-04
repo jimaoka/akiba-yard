@@ -58,7 +58,7 @@ var statusCheck = function(r) {
         r["time"] = Date.now()
         r["positions"] = positions
         r["criminal"] = criminal
-        collection(COLNAME).updateOne(r.gameid, {$set: r}).then(function(r2) {
+        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           // Nothing
         })
       }
