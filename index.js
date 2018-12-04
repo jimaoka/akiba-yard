@@ -183,7 +183,7 @@ app.post('/games/:gameid/catch', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       if(r.status == "3"){  // ゲームフェーズ中の場合
-        var climinalPos = r.positions.criminal
+        var criminalPos = r.positions.criminal
         var policePoses = r.positions.police
         var closest = 99999999
         policePoses.forEach(function(v){
