@@ -42,7 +42,7 @@ var statusCheck = function(r) {
         var criminalPos = Math.floor( Math.random() * (r.members.length) )
         var criminal = r.members[criminalPos]
         var police = []
-        r.members.foreach(function(v){
+        r.members.forEach(function(v){
           if(v != criminal){
             police.push({
               nickname: v,
@@ -102,7 +102,9 @@ app.get('/games/:gameid/info', function(request, response) {
   collection(COLNAME).findOne(q).then(function(r) {
     if(r){  // 存在する場合
       statusCheck(r)
-      response.send(r)
+      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
+        response.send(r)
+      })
     } else {  // 存在しない場合
       response.status(404)
       response.send({ error: "Game Not Found" })
