@@ -56,6 +56,7 @@ var statusCheck = function(r) {
           criminal: {nickname: criminal, lat: "", lon: ""}
         }
         r["positions"] = positions
+        r["criminal"] = criminal
       }
     },
     3: function(r){},
@@ -127,7 +128,7 @@ app.post('/games/:gameid/position', function(request, response) {
           v.lon = req.lon
         }
       })
-      if(r.positions.criminal.nickname == nickname){
+      if(r.positions.criminal.nickname == req.nickname){
           r.positions.criminal.timestamp = req.timestamp
           r.positions.criminal.lat = req.lat
           r.positions.criminal.lon = req.lon
