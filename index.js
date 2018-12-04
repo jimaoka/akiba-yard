@@ -146,7 +146,7 @@ app.post('/games/:gameid/position', function(request, response) {
             r.positions.criminal.lat = req.lat
             r.positions.criminal.lon = req.lon
         }
-        collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
+        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           response.send(r)
         })
       } else {
