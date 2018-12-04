@@ -73,7 +73,7 @@ var statusCheck = function(r) {
 // ゲームIDを指定してゲームをすすめる
 var processGame = function(gameid, ifGame, ifNoGame){
   // 既存ゲームの取得、処理
-  collection(COLNAME).findOne({ gameid: gameid }).then(function(r) {
+  collection(COLNAME).findOne({gameid: gameid}).then(function(r) {
     if(r){  // 存在する場合
       statusCheck(r)
       ifGame(gameid, r)
@@ -85,6 +85,33 @@ var processGame = function(gameid, ifGame, ifNoGame){
 
 // /games/:gameid/join (POST)
 app.post('/games/:gameid/join', function(request, response) {
+  var nickname = request.body.nickname
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      if(r.status != "2"){  // ステータスが異なる場合
+        response.send(r)
+      } else if(r){  // 募集中のゲームが存在する場合
+        r.members.push(nickname)
+        collection(COLNAME).updateOne({gameid:gameid}, {$set: r}).then(function(r2) {
+          response.send(r)
+        })
+      }
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      var game = {
+        gameid: gameid,
+        members: [nickname],
+        criminal: "",
+        time: Date.now(),
+        status: "2"
+      }
+      collection(COLNAME).insertOne(game).then(function(r2) {
+        response.send(game)
+      })
+    }
+  )
+  /*
   var gameid = request.params.gameid
   var q = { gameid: gameid }
   var nickname = request.body.nickname
@@ -110,6 +137,7 @@ app.post('/games/:gameid/join', function(request, response) {
       })
     }
   })
+  */
 })
 
 // /games/:gameid/info (GET)
