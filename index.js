@@ -55,6 +55,7 @@ var statusCheck = function(r) {
           police: police,
           criminal: {nickname: criminal, lat: "", lon: ""}
         }
+        r["time"] = Date.now()
         r["positions"] = positions
         r["criminal"] = criminal
       }
@@ -147,9 +148,17 @@ app.post('/games/:gameid/position', function(request, response) {
 app.get('/games/:gameid/position', function(request, response) {
   var gameid = request.params.gameid
   var q = { gameid: gameid }
-  // すべて返す
-  collection(COLNAME).findOne(q).then(function(r){
-    response.send(r)
+  // 既存ゲームの取得
+  collection(COLNAME).findOne(q).then(function(r) {
+    if(r){  // 存在する場合
+      statusCheck(r)
+      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
+        response.send(r)
+      })
+    } else {  // 存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
   })
 })
 
