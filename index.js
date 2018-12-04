@@ -182,12 +182,23 @@ app.post('/games/:gameid/catch', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      var closest = geolib.getDistance(
-        {latitude: 37.702614, longitude: 139.775784},
-        {latitude: 37.695589, longitude: 139.775319}
-      )
-      r.closestDistance = closest
-      response.send(r)
+      if(r.status == "3"){  // ゲームフェーズ中の場合
+        var climinalPos = r.positions.criminal
+        var policePoses = r.positions.police
+        var closest = 99999999
+        policePoses.forEach(function(v){
+          var distance = geolib.getDistance(
+            {latitude: v.lat, longitude: v.lon},
+            {latitude: criminalPos.lat, longitude: criminalPos.lon}
+          )
+          if(closest>distance){closest=distance}
+        })
+        r.closestDistance = closest
+        response.send(r)
+      } else {  // ゲームフェーズではない場合
+        response.status(404)
+        response.send({ error: "Active Game Not Found" })  
+      }
     },
     (gameid, r)=>{ // ゲームが存在しない場合
       response.status(404)
