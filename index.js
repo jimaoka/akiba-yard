@@ -111,33 +111,6 @@ app.post('/games/:gameid/join', function(request, response) {
       })
     }
   )
-  /*
-  var gameid = request.params.gameid
-  var q = { gameid: gameid }
-  var nickname = request.body.nickname
-  // 既存ゲームの取得
-  collection(COLNAME).findOne(q).then(function(r) {
-    if(r && r.status != "2"){  // 存在するがステータスが異なる場合
-      response.send(r)
-    } else if(r){  // 募集中のゲームが存在する場合
-      r.members.push(nickname)
-      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
-        response.send(r)
-      })
-    } else {  // 存在しない場合
-      var game = {
-        gameid: gameid,
-        members: [nickname],
-        criminal: "",
-        time: Date.now(),
-        status: "2"
-      }
-      collection(COLNAME).insertOne(game).then(function(r2) {
-        response.send(game)
-      })
-    }
-  })
-  */
 })
 
 // /games/:gameid/info (GET)
@@ -156,32 +129,36 @@ app.get('/games/:gameid/info', function(request, response) {
 
 // /games/:gameid/position (POST)
 app.post('/games/:gameid/position', function(request, response) {
-  var gameid = request.params.gameid
-  var q = { gameid: gameid }
   var req = request.body
-  // 既存ゲームの取得
-  collection(COLNAME).findOne(q).then(function(r) {
-    if(r && r.status == "3"){  // 存在する場合
-      r.positions.police.map( function(v){
-        if(v.nickname == req.nickname){
-          v.timestamp = req.timestamp
-          v.lat = req.lat
-          v.lon = req.lon
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      if(r.status == "3"){  // ゲームフェーズ中の場合
+        r.positions.police.map( function(v){
+          if(v.nickname == req.nickname){
+            v.timestamp = req.timestamp
+            v.lat = req.lat
+            v.lon = req.lon
+          }
+        })
+        if(r.positions.criminal.nickname == req.nickname){
+            r.positions.criminal.timestamp = req.timestamp
+            r.positions.criminal.lat = req.lat
+            r.positions.criminal.lon = req.lon
         }
-      })
-      if(r.positions.criminal.nickname == req.nickname){
-          r.positions.criminal.timestamp = req.timestamp
-          r.positions.criminal.lat = req.lat
-          r.positions.criminal.lon = req.lon
+        collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
+          response.send(r)
+        })
+      } else {
+        response.status(404)
+        response.send({ error: "Active Game Not Found" })  
       }
-      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
-        response.send(r)
-      })
-    } else {  // 存在しない場合
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
       response.status(404)
       response.send({ error: "Game Not Found" })
     }
-  })
+  )
 })
 
 // /games/:gameid/position (GET)
