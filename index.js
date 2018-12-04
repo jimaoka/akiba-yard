@@ -213,7 +213,9 @@ app.post('/games/:gameid/abort', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      response.send(r)
+      collection(COLNAME).deleteOne({gameid: r.gameid}).then(function(r) {
+        response.send()
+      })
     },
     (gameid, r)=>{ // ゲームが存在しない場合
       response.status(404)
