@@ -58,6 +58,9 @@ var statusCheck = function(r) {
         r["time"] = Date.now()
         r["positions"] = positions
         r["criminal"] = criminal
+        collection(COLNAME).updateOne(r.gameid, {$set: r}).then(function(r2) {
+          // Nothing
+        })
       }
     },
     3: function(r){},
@@ -65,6 +68,19 @@ var statusCheck = function(r) {
     5: function(r){}
   }
   transition[r.status](r)
+}
+
+// ゲームIDを指定してゲームをすすめる
+var processGame = function(gameid, ifGame, ifNoGame){
+  // 既存ゲームの取得、処理
+  collection(COLNAME).findOne(gameid).then(function(r) {
+    if(r){  // 存在する場合
+      statusCheck(r)
+      ifGame(gameid, r)
+    } else {  // 存在しない場合
+      ifNoGame(gameid, r)
+    }
+  })
 }
 
 // /games/:gameid/join (POST)
@@ -98,6 +114,17 @@ app.post('/games/:gameid/join', function(request, response) {
 
 // /games/:gameid/info (GET)
 app.get('/games/:gameid/info', function(request, response) {
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      response.send(r)
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  )
+  /*
   var gameid = request.params.gameid
   var q = { gameid: gameid }
   // 既存ゲームの取得
@@ -111,7 +138,7 @@ app.get('/games/:gameid/info', function(request, response) {
       response.status(404)
       response.send({ error: "Game Not Found" })
     }
-  })
+  })*/
 })
 
 // /games/:gameid/position (POST)
