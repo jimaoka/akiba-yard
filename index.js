@@ -73,7 +73,7 @@ var statusCheck = function(r) {
 // ゲームIDを指定してゲームをすすめる
 var processGame = function(gameid, ifGame, ifNoGame){
   // 既存ゲームの取得、処理
-  collection(COLNAME).findOne(gameid).then(function(r) {
+  collection(COLNAME).findOne({ gameid: gameid }).then(function(r) {
     if(r){  // 存在する場合
       statusCheck(r)
       ifGame(gameid, r)
@@ -124,21 +124,6 @@ app.get('/games/:gameid/info', function(request, response) {
       response.send({ error: "Game Not Found" })
     }
   )
-  /*
-  var gameid = request.params.gameid
-  var q = { gameid: gameid }
-  // 既存ゲームの取得
-  collection(COLNAME).findOne(q).then(function(r) {
-    if(r){  // 存在する場合
-      statusCheck(r)
-      collection(COLNAME).updateOne(q, {$set: r}).then(function(r2) {
-        response.send(r)
-      })
-    } else {  // 存在しない場合
-      response.status(404)
-      response.send({ error: "Game Not Found" })
-    }
-  })*/
 })
 
 // /games/:gameid/position (POST)
