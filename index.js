@@ -129,7 +129,7 @@ app.post('/games/:gameid/join', function(request, response) {
       }
     },
     (gameid, r)=>{ // ゲームが存在しない場合
-      var game = {
+      var r = {
         catchResult: "",
         winner: "",
         gameid: gameid,
@@ -142,10 +142,10 @@ app.post('/games/:gameid/join', function(request, response) {
         status: "2",
         positions: ""
       }
-      collection(COLNAME).insertOne(game).then(function(r2) {
-        delete game['positions']
-        delete game['_id']
-        response.send(game)
+      collection(COLNAME).insertOne(r).then(function(r2) {
+        delete r['positions']
+        delete r['_id']
+        response.send(r)
       })
     }
   )
