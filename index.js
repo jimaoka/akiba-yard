@@ -3,13 +3,12 @@ const app = express()
 const mongodb = require('mongodb')
 const assert = require('assert')
 const url = require('url')
+const geolib = require('geolib');
 
 // 定数
 const mongoUri = process.env.MONGODB_URI
 const DBNAME = process.env.MONGODB_DBNAME
-const COLNAME = 'akibaTest'
-const testData = require('./resource/testData.json')
-const testDataLatest = require('./resource/testDataLatest.json')
+const COLNAME = 'games'
 const MongoClient = mongodb.MongoClient
 
 // 処々の初期化処理
@@ -25,43 +24,254 @@ MongoClient.connect(mongoUri, (err, client) => {
   console.log("Connected successfully to server")
   database=client.db(DBNAME)
 })
-var collection = function(name) {
-  return database.collection(name)
+var collection = function(name, options) {
+  return database.collection(name, options)
 }
 
-// アプリから位置情報を送るための受け口
-app.post('/position', function(request, response) {
-  var req = JSON.stringify(request.body)
-  // リクエストをインサートして内容を返す
-  collection(COLNAME).insertOne(request.body).then(function(r) {
-    response.send(req)
-  })
-})
+// フェーズの情報
+var phases = {
+  1: {  // 開始前フェーズ
+    totalTime: 0,
+    check: (r) =>{
+      // Nothing
+    }
+  },
+  2: {  // 待機中フェーズ
+    totalTime: 60000,
+    check: (r) =>{
+      console.log("2nd phase check")
+      r["elaspedTime"] = Date.now() - r.absStartTime
+      if(r["elaspedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        console.log("move to 3rd phase")
+        r.status = "3"
+        var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
+        var positions = []
+        r.members.forEach(function(v){
+          positions.push({
+            nickname: v,
+            lat: "",
+            lon: "",
+            timestamp: ""
+          })
+        })
+        r["absStartTime"] = Date.now()
+        r["absEndTime"] = Date.now() + 600000
+        r["totalTime"] = 600000
+        r["elaspedTime"] = 0
+        r["positions"] = positions
+        r["criminal"] = criminal
+      }
+    }
+  },
+  3: {  // 準備フェーズ
+    totalTime: 600000,
+    check: (r) =>{
+      console.log("3rd phase check")
+      r["elaspedTime"] = Date.now() - r.absStartTime
+      if(r["elaspedTime"] > 600000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        r.status = "4"
+        r["absStartTime"] = Date.now()
+        r["absEndTime"] = Date.now() + 1800000
+        r["totalTime"] = 1800000
+        r["elaspedTime"] = 0
+      }
+    }
+  },
+  4: {  // プレイフェーズ
+    totalTime: 1800000,
+    check: (r) =>{
+      console.log("4th phase check")
+      r["elaspedTime"] = Date.now() - r.absStartTime
+      if(r["elaspedTime"] > 1800000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        r.catchResult = "failed"
+        r.winner = "criminal"
+        r.status = "5"
+      }
+    }
+  },
+  5: {  //終了フェーズ
+    totalTime: 0,
+    check: (r) =>{
+      // Nothing
+    }
+  }
+}
 
-// アプリから他端末を含めた位置情報をすべて取得するための受け口
-app.get('/position', function(request, response) {
-  // すべて返す
-  collection(COLNAME).find().toArray(function(err, docs){
-      response.send(docs)
+// ゲームIDを指定してゲームをすすめる
+var processGame = function(gameid, ifGame, ifNoGame){
+  // 既存ゲームの取得、処理
+  collection(COLNAME).findOne({gameid: gameid}).then(function(r) {
+    if(r){  // 存在する場合
+      phases[r.status].check(r)
+      ifGame(gameid, r)
+    } else {  // 存在しない場合
+      ifNoGame(gameid, r)
+    }
   })
-})
+}
 
-// アプリから他端末を含めた位置情報を取得するための受け口(一つだけ返す)
-app.get('/position/latest', function(request, response) {
-  // ID毎に最新のものをクエリして返す
-  collection(COLNAME).group(
-    ['id'],
-    {},
-    {'latestTime': 0, 'lat': 0, 'lon': 0},
-    "function(obj,prev){ if(prev.latestTime<obj.timestamp){ prev.latestTime = obj.timestamp; prev.lat = obj.lat; prev.lon = obj.lon }}",
-    (err, docs) => {
-      console.log(JSON.stringify(docs))
-      response.send(docs)
+// /games/:gameid/join (POST)
+app.post('/games/:gameid/join', function(request, response) {
+  var req = request.body
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      if(r.status != "2"){  // ステータスが異なる場合
+        response.send(r)
+      } else if(r){  // 募集中のゲームが存在する場合
+        r.members.push(req.nickname)
+        collection(COLNAME).updateOne({gameid:gameid}, {$set: r}).then(function(r2) {
+          response.send(r)
+        })
+      }
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      var game = {
+        catchResult: "",
+        winner: "",
+        gameid: gameid,
+        members: [req.nickname],
+        criminal: "",
+        absStartTime: Date.now(),
+        absEndTime: Date.now() + phases["2"].totalTime,
+        elaspedTime: "0",
+        totalTime: phases["2"].totalTime,
+        status: "2",
+        positions: ""
+      }
+      collection(COLNAME).insertOne(game).then(function(r2) {
+        response.send(game)
+      })
     }
   )
 })
 
-// Start listen request
+// /games/:gameid/info (GET)
+app.get('/games/:gameid/info', function(request, response) {
+  var req = request.body
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        response.send(r)
+      })
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  )
+})
+
+// /games/:gameid/position (POST)
+app.post('/games/:gameid/position', function(request, response) {
+  var req = request.body
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      if(r.status == "3" || r.status == "4"){  // 準備フェーズかゲームフェーズ中の場合
+        r.positions.map( function(v){
+          if(v.nickname == req.nickname){
+            v.timestamp = req.timestamp
+            v.lat = req.lat
+            v.lon = req.lon
+          }
+        })
+        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+          response.send(r)
+        })
+      } else {  // ゲームフェーズではない場合
+        response.status(404)
+        response.send({ error: "Active Game Not Found" })  
+      }
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  )
+})
+
+// /games/:gameid/position (GET)
+app.get('/games/:gameid/position', function(request, response) {
+  var req = request.body
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        response.send(r)
+      })
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  )
+})
+
+// /games/:gameid/catch (POST)
+app.post('/games/:gameid/catch', function(request, response) {
+  var req = request.body
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      if(r.status == "4"){  // プレイフェーズ中の場合
+        var positions = r.positions
+        var criminalPos = {}
+        positions.forEach(function(v){
+          if(v.nickname == r.criminal){criminalPos = v}
+        })
+        var closest = 99999999
+        positions.forEach(function(v){
+          if(criminalPos.nickname != v.nickname){
+            var distance = geolib.getDistance(
+              {latitude: v.lat, longitude: v.lon},
+              {latitude: criminalPos.lat, longitude: criminalPos.lon}
+            )
+            if(closest>distance){closest=distance}
+          }
+        })
+        r.closestDistance = closest
+        if(closest < 25){
+          r.catchResult = "success"
+          r.winner = "police"
+          r.status = "5"
+        } else {
+          r.catchResult = "failed"
+        }
+        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+          response.send(r)
+        })
+      } else {  // ゲームフェーズではない場合
+        response.status(404)
+        response.send({ error: "Active Game Not Found" })  
+      }
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  )
+})
+
+// /games/:gameid/abort (POST)
+app.post('/games/:gameid/abort', function(request, response) {
+  var req = request.body
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      collection(COLNAME).deleteOne({gameid: r.gameid}).then(function(r) {
+        response.send()
+      })
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  )
+})
+
+// Start to listen request
 app.listen(app.get('port'), function() {
   console.log("Node app is running at localhost:" + app.get('port'))
 })
