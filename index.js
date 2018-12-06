@@ -39,6 +39,7 @@ var phases = {
   2: {  // 待機中フェーズ
     totalTime: 60000,
     check: (r) =>{
+      console.log("2nd phase check")
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "3"
@@ -67,23 +68,31 @@ var phases = {
   3: {  // 準備フェーズ
     totalTime: 600000,
     check: (r) =>{
+      console.log("3rd phase check")
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r["absStartTime"] = Date.now()
         r["absEndTime"] = Date.now() + 1800000
         r["totalTime"] = 1800000
         r["elaspedTime"] = 0
+        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+          // Nothing
+        })
       }
     }
   },
   4: {  // プレイフェーズ
     totalTime: 1800000,
     check: (r) =>{
+      console.log("4th phase check")
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.catchResult = "failed"
         r.winner = "criminal"
         r.status = "5"
+        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+          // Nothing
+        })
       }
     }
   },
