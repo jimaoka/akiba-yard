@@ -69,6 +69,7 @@ var phases = {
       console.log("3rd phase check")
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > 600000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        r.status = "4"
         r["absStartTime"] = Date.now()
         r["absEndTime"] = Date.now() + 1800000
         r["totalTime"] = 1800000
@@ -215,15 +216,20 @@ app.post('/games/:gameid/catch', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       if(r.status == "4"){  // プレイフェーズ中の場合
-        var criminalPos = r.positions.criminal
-        var policePoses = r.positions.police
+        var positions = r.positions
+        var criminalPos = {}
+        positions.forEach(function(v){
+          if(v.nickname == r.criminal){criminalPos = v}
+        })
         var closest = 99999999
-        policePoses.forEach(function(v){
-          var distance = geolib.getDistance(
-            {latitude: v.lat, longitude: v.lon},
-            {latitude: criminalPos.lat, longitude: criminalPos.lon}
-          )
-          if(closest>distance){closest=distance}
+        positions.forEach(function(v){
+          if(criminalPos.nickname != v.nickname){
+            var distance = geolib.getDistance(
+              {latitude: v.lat, longitude: v.lon},
+              {latitude: criminalPos.lat, longitude: criminalPos.lon}
+            )
+            if(closest>distance){closest=distance}
+          }
         })
         r.closestDistance = closest
         if(closest < 25){
