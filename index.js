@@ -42,6 +42,7 @@ var phases = {
       console.log("2nd phase check")
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        console.log("move to 3rd phase")
         r.status = "3"
         var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
         var positions = []
