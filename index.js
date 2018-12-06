@@ -32,13 +32,13 @@ var collection = function(name, options) {
 var phases = {
   1: {  // 開始前フェーズ
     totalTime: 0,
-    check: () =>{
+    check: (r) =>{
       // Nothing
     }
   },
   2: {  // 待機中フェーズ
     totalTime: 60000,
-    check: () =>{
+    check: (r) =>{
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "3"
@@ -66,7 +66,7 @@ var phases = {
   },
   3: {  // 準備フェーズ
     totalTime: 600000,
-    check: () =>{
+    check: (r) =>{
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r["absStartTime"] = Date.now()
@@ -78,7 +78,7 @@ var phases = {
   },
   4: {  // プレイフェーズ
     totalTime: 1800000,
-    check: () =>{
+    check: (r) =>{
       r["elaspedTime"] = Date.now() - r.absStartTime
       if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.catchResult = "failed"
@@ -89,7 +89,7 @@ var phases = {
   },
   5: {  //終了フェーズ
     totalTime: 0,
-    check: () =>{
+    check: (r) =>{
       // Nothing
     }
   }
