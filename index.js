@@ -131,9 +131,9 @@ app.post('/games/:gameid/join', function(request, response) {
         members: [req.nickname],
         criminal: "",
         absStartTime: Date.now(),
-        absEndTime: Date.now() + phases[this.status].totalTime,
+        absEndTime: Date.now() + phases["2"].totalTime,
         elaspedTime: "0",
-        totalTime: phases[this.status].totalTime,
+        totalTime: phases["2"].totalTime,
         status: "2",
         positions: ""
       }
