@@ -113,6 +113,7 @@ var processGame = function(gameid, ifGame, ifNoGame){
 // /games/:gameid/join (POST)
 app.post('/games/:gameid/join', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
@@ -122,6 +123,7 @@ app.post('/games/:gameid/join', function(request, response) {
         r.members.push(req.nickname)
         collection(COLNAME).updateOne({gameid:gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
+          delete r['_id']
           response.send(r)
         })
       }
@@ -142,6 +144,7 @@ app.post('/games/:gameid/join', function(request, response) {
       }
       collection(COLNAME).insertOne(game).then(function(r2) {
         delete game['positions']
+        delete game['_id']
         response.send(game)
       })
     }
@@ -156,6 +159,7 @@ app.get('/games/:gameid/info', function(request, response) {
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
         delete r['positions']
+        delete game['_id']
         response.send(r)
       })
     },
@@ -182,6 +186,7 @@ app.post('/games/:gameid/position', function(request, response) {
         })
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
+          delete game['_id']
           response.send(r)
         })
       } else {  // ゲームフェーズではない場合
@@ -245,6 +250,7 @@ app.post('/games/:gameid/catch', function(request, response) {
         }
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
+          delete game['_id']
           response.send(r)
         })
       } else {  // ゲームフェーズではない場合
