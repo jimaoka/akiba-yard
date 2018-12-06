@@ -161,7 +161,7 @@ app.get('/games/:gameid/info', function(request, response) {
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
         delete r['positions']
-        delete game['_id']
+        delete r['_id']
         console.log(r)
         response.send(r)
       })
