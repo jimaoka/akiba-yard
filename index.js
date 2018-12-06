@@ -28,45 +28,71 @@ var collection = function(name, options) {
   return database.collection(name, options)
 }
 
-// ステータス遷移のチェック
-var statusCheck = function(r) {
-  // チェック用の関数
-  var transition = {
-    1: function(r) {
+// フェーズの情報
+var phases = {
+  1: {  // 開始前フェーズ
+    totalTime: 0,
+    check: () =>{
       // Nothing
-    }, 
-    2: function(r) {
-      if(Date.now() - r.time > 60000){  // 60s以上経過してたらゲーム開始処理
+    }
+  },
+  2: {  // 待機中フェーズ
+    totalTime: 60000,
+    check: () =>{
+      r["elaspedTime"] = Date.now() - r.absStartTime
+      if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "3"
-        var criminalPos = Math.floor( Math.random() * (r.members.length) )
-        var criminal = r.members[criminalPos]
-        var police = []
+        var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
+        var positions = []
         r.members.forEach(function(v){
-          if(v != criminal){
-            police.push({
-              nickname: v,
-              lat: "",
-              lon: ""
-            })
-          }
+          positions.push({
+            nickname: v,
+            lat: "",
+            lon: "",
+            timestamp: ""
+          })
         })
-        var positions = {
-          police: police,
-          criminal: {nickname: criminal, lat: "", lon: ""}
-        }
-        r["time"] = Date.now()
+        r["absStartTime"] = Date.now()
+        r["absEndTime"] = Date.now() + 600000
+        r["totalTime"] = 600000
+        r["elaspedTime"] = 0
         r["positions"] = positions
         r["criminal"] = criminal
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           // Nothing
         })
       }
-    },
-    3: function(r){},
-    4: function(r){},
-    5: function(r){}
+    }
+  },
+  3: {  // 準備フェーズ
+    totalTime: 600000,
+    check: () =>{
+      r["elaspedTime"] = Date.now() - r.absStartTime
+      if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        r["absStartTime"] = Date.now()
+        r["absEndTime"] = Date.now() + 1800000
+        r["totalTime"] = 1800000
+        r["elaspedTime"] = 0
+      }
+    }
+  },
+  4: {  // プレイフェーズ
+    totalTime: 1800000,
+    check: () =>{
+      r["elaspedTime"] = Date.now() - r.absStartTime
+      if(r["elaspedTime"] > this.totalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        r.catchResult = "failed"
+        r.winner = "criminal"
+        r.status = "5"
+      }
+    }
+  },
+  5: {  //終了フェーズ
+    totalTime: 0,
+    check: () =>{
+      // Nothing
+    }
   }
-  transition[r.status](r)
 }
 
 // ゲームIDを指定してゲームをすすめる
@@ -74,7 +100,7 @@ var processGame = function(gameid, ifGame, ifNoGame){
   // 既存ゲームの取得、処理
   collection(COLNAME).findOne({gameid: gameid}).then(function(r) {
     if(r){  // 存在する場合
-      statusCheck(r)
+      phases[r.status].check(r)
       ifGame(gameid, r)
     } else {  // 存在しない場合
       ifNoGame(gameid, r)
@@ -99,11 +125,17 @@ app.post('/games/:gameid/join', function(request, response) {
     },
     (gameid, r)=>{ // ゲームが存在しない場合
       var game = {
+        catchResult: "",
+        winner: "",
         gameid: gameid,
         members: [req.nickname],
         criminal: "",
-        time: Date.now(),
-        status: "2"
+        absStartTime: Date.now(),
+        absEndTime: Date.now() + phases[this.status].totalTime,
+        elaspedTime: "0",
+        totalTime: phases[this.status].totalTime,
+        status: "2",
+        positions: ""
       }
       collection(COLNAME).insertOne(game).then(function(r2) {
         response.send(game)
@@ -133,19 +165,14 @@ app.post('/games/:gameid/position', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      if(r.status == "3"){  // ゲームフェーズ中の場合
-        r.positions.police.map( function(v){
+      if(r.status == "4"){  // ゲームフェーズ中の場合
+        r.positions.map( function(v){
           if(v.nickname == req.nickname){
             v.timestamp = req.timestamp
             v.lat = req.lat
             v.lon = req.lon
           }
         })
-        if(r.positions.criminal.nickname == req.nickname){
-            r.positions.criminal.timestamp = req.timestamp
-            r.positions.criminal.lat = req.lat
-            r.positions.criminal.lon = req.lon
-        }
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           response.send(r)
         })
@@ -182,7 +209,7 @@ app.post('/games/:gameid/catch', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      if(r.status == "3"){  // ゲームフェーズ中の場合
+      if(r.status == "4"){  // プレイフェーズ中の場合
         var criminalPos = r.positions.criminal
         var policePoses = r.positions.police
         var closest = 99999999
@@ -194,7 +221,16 @@ app.post('/games/:gameid/catch', function(request, response) {
           if(closest>distance){closest=distance}
         })
         r.closestDistance = closest
-        response.send(r)
+        if(closest < 25){
+          r.catchResult = "success"
+          r.winner = "police"
+          r.status = "5"
+        } else {
+          r.catchResult = "failed"
+        }
+        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+          response.send(r)
+        })
       } else {  // ゲームフェーズではない場合
         response.status(404)
         response.send({ error: "Active Game Not Found" })  
