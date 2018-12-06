@@ -173,6 +173,7 @@ app.get('/games/:gameid/info', function(request, response) {
 // /games/:gameid/position (POST)
 app.post('/games/:gameid/position', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
@@ -204,6 +205,7 @@ app.post('/games/:gameid/position', function(request, response) {
 // /games/:gameid/position (GET)
 app.get('/games/:gameid/position', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
@@ -221,6 +223,7 @@ app.get('/games/:gameid/position', function(request, response) {
 // /games/:gameid/catch (POST)
 app.post('/games/:gameid/catch', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
@@ -268,6 +271,7 @@ app.post('/games/:gameid/catch', function(request, response) {
 // /games/:gameid/abort (POST)
 app.post('/games/:gameid/abort', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
