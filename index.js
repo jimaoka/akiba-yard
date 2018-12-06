@@ -138,7 +138,7 @@ app.post('/games/:gameid/join', function(request, response) {
         criminal: "",
         absStartTime: Date.now(),
         absEndTime: Date.now() + phases["2"].totalTime,
-        elapsedTime: "0",
+        elapsedTime: 0,
         totalTime: phases["2"].totalTime,
         status: "2",
         positions: ""
