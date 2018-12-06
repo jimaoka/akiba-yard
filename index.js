@@ -145,6 +145,7 @@ app.post('/games/:gameid/join', function(request, response) {
       collection(COLNAME).insertOne(r).then(function(r2) {
         delete r['positions']
         delete r['_id']
+        console.log(r)
         response.send(r)
       })
     }
