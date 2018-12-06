@@ -40,8 +40,8 @@ var phases = {
     totalTime: 60000,
     check: (r) =>{
       console.log("2nd phase check")
-      r["elaspedTime"] = Date.now() - r.absStartTime
-      if(r["elaspedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      r["elapsedTime"] = Date.now() - r.absStartTime
+      if(r["elapsedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         console.log("move to 3rd phase")
         r.status = "3"
         var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
@@ -57,7 +57,7 @@ var phases = {
         r["absStartTime"] = Date.now()
         r["absEndTime"] = Date.now() + 60000
         r["totalTime"] = 60000
-        r["elaspedTime"] = 0
+        r["elapsedTime"] = 0
         r["positions"] = positions
         r["criminal"] = criminal
       }
@@ -67,13 +67,13 @@ var phases = {
     totalTime: 60000,
     check: (r) =>{
       console.log("3rd phase check")
-      r["elaspedTime"] = Date.now() - r.absStartTime
-      if(r["elaspedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      r["elapsedTime"] = Date.now() - r.absStartTime
+      if(r["elapsedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "4"
         r["absStartTime"] = Date.now()
         r["absEndTime"] = Date.now() + 180000
         r["totalTime"] = 180000
-        r["elaspedTime"] = 0
+        r["elapsedTime"] = 0
       }
     }
   },
@@ -81,8 +81,8 @@ var phases = {
     totalTime: 180000,
     check: (r) =>{
       console.log("4th phase check")
-      r["elaspedTime"] = Date.now() - r.absStartTime
-      if(r["elaspedTime"] > 180000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      r["elapsedTime"] = Date.now() - r.absStartTime
+      if(r["elapsedTime"] > 180000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.catchResult = "failed"
         r.winner = "criminal"
         r.status = "5"
@@ -124,6 +124,7 @@ app.post('/games/:gameid/join', function(request, response) {
         collection(COLNAME).updateOne({gameid:gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
           delete r['_id']
+          console.log(r)
           response.send(r)
         })
       }
@@ -137,7 +138,7 @@ app.post('/games/:gameid/join', function(request, response) {
         criminal: "",
         absStartTime: Date.now(),
         absEndTime: Date.now() + phases["2"].totalTime,
-        elaspedTime: "0",
+        elapsedTime: "0",
         totalTime: phases["2"].totalTime,
         status: "2",
         positions: ""
@@ -161,6 +162,7 @@ app.get('/games/:gameid/info', function(request, response) {
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
         delete r['positions']
         delete game['_id']
+        console.log(r)
         response.send(r)
       })
     },
@@ -189,6 +191,7 @@ app.post('/games/:gameid/position', function(request, response) {
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
           delete game['_id']
+          console.log(r)
           response.send(r)
         })
       } else {  // ゲームフェーズではない場合
@@ -211,6 +214,7 @@ app.get('/games/:gameid/position', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        console.log(r)
         response.send(r)
       })
     },
@@ -255,6 +259,7 @@ app.post('/games/:gameid/catch', function(request, response) {
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
           delete game['_id']
+          console.log(r)
           response.send(r)
         })
       } else {  // ゲームフェーズではない場合
