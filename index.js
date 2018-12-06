@@ -118,6 +118,8 @@ app.post('/games/:gameid/join', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       if(r.status != "2"){  // ステータスが異なる場合
+        delete r['positions']
+        delete r['_id']
         response.send(r)
       } else if(r){  // 募集中のゲームが存在する場合
         r.members.push(req.nickname)
@@ -180,7 +182,7 @@ app.post('/games/:gameid/position', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      if(r.status == "3" || r.status == "4"){  // 準備フェーズかゲームフェーズ中の場合
+      if(r){  // 準備フェーズかゲームフェーズ中の場合
         r.positions.map( function(v){
           if(v.nickname == req.nickname){
             v.timestamp = req.timestamp
@@ -214,6 +216,7 @@ app.get('/games/:gameid/position', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        delete r['_id']
         console.log(r)
         response.send(r)
       })
