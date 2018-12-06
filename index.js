@@ -168,7 +168,7 @@ app.post('/games/:gameid/position', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      if(r.status == "4"){  // ゲームフェーズ中の場合
+      if(r.status == "3" || r.status == "4"){  // 準備フェーズかゲームフェーズ中の場合
         r.positions.map( function(v){
           if(v.nickname == req.nickname){
             v.timestamp = req.timestamp
