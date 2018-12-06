@@ -59,9 +59,6 @@ var phases = {
         r["elaspedTime"] = 0
         r["positions"] = positions
         r["criminal"] = criminal
-        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
-          // Nothing
-        })
       }
     }
   },
@@ -75,9 +72,6 @@ var phases = {
         r["absEndTime"] = Date.now() + 1800000
         r["totalTime"] = 1800000
         r["elaspedTime"] = 0
-        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
-          // Nothing
-        })
       }
     }
   },
@@ -90,9 +84,6 @@ var phases = {
         r.catchResult = "failed"
         r.winner = "criminal"
         r.status = "5"
-        collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
-          // Nothing
-        })
       }
     }
   },
@@ -159,7 +150,9 @@ app.get('/games/:gameid/info', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      response.send(r)
+      collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        response.send(r)
+      })
     },
     (gameid, r)=>{ // ゲームが存在しない場合
       response.status(404)
@@ -203,7 +196,9 @@ app.get('/games/:gameid/position', function(request, response) {
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      response.send(r)
+      collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        response.send(r)
+      })
     },
     (gameid, r)=>{ // ゲームが存在しない場合
       response.status(404)
