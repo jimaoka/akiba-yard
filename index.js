@@ -37,11 +37,11 @@ var phases = {
     }
   },
   2: {  // 待機中フェーズ
-    totalTime: 60000,
+    totalTime: 10000,
     check: (r) =>{
       console.log("2nd phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > 10000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         console.log("move to 3rd phase")
         r.status = "3"
         var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
@@ -55,8 +55,8 @@ var phases = {
           })
         })
         r["absStartTime"] = Date.now()
-        r["absEndTime"] = Date.now() + 60000
-        r["totalTime"] = 60000
+        r["absEndTime"] = Date.now() + 10000
+        r["totalTime"] = 10000
         r["elapsedTime"] = 0
         r["positions"] = positions
         r["criminal"] = criminal
@@ -64,11 +64,11 @@ var phases = {
     }
   },
   3: {  // 準備フェーズ
-    totalTime: 60000,
+    totalTime: 10000,
     check: (r) =>{
       console.log("3rd phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > 10000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "4"
         r["absStartTime"] = Date.now()
         r["absEndTime"] = Date.now() + 180000
