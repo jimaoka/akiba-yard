@@ -190,7 +190,7 @@ app.post('/games/:gameid/position', function(request, response) {
         })
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
-          delete game['_id']
+          delete r['_id']
           console.log(r)
           response.send(r)
         })
