@@ -29,7 +29,7 @@ var collection = function(name, options) {
 }
 
 const PH2_TIME_LIMIT = 60 * 1000
-const PH3_TIME_LIMIT = 60 * 1000
+const PH3_TIME_LIMIT = 600 * 1000
 const PH4_TIME_LIMIT = 1800 * 1000
 
 // フェーズの情報
