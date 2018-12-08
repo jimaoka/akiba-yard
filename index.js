@@ -28,6 +28,10 @@ var collection = function(name, options) {
   return database.collection(name, options)
 }
 
+const PH2_TIME_LIMIT = 60 * 1000
+const PH3_TIME_LIMIT = 60 * 1000
+const PH4_TIME_LIMIT = 1800 * 1000
+
 // フェーズの情報
 var phases = {
   1: {  // 開始前フェーズ
@@ -37,11 +41,11 @@ var phases = {
     }
   },
   2: {  // 待機中フェーズ
-    totalTime: 10000,
+    totalTime: PH2_TIME_LIMIT,
     check: (r) =>{
       console.log("2nd phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > 10000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > PH2_TIME_LIMIT){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         console.log("move to 3rd phase")
         r.status = "3"
         var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
@@ -55,8 +59,8 @@ var phases = {
           })
         })
         r["absStartTime"] = Date.now()
-        r["absEndTime"] = Date.now() + 10000
-        r["totalTime"] = 10000
+        r["absEndTime"] = Date.now() + PH3_TIME_LIMIT
+        r["totalTime"] = PH3_TIME_LIMIT
         r["elapsedTime"] = 0
         r["positions"] = positions
         r["criminal"] = criminal
@@ -64,25 +68,25 @@ var phases = {
     }
   },
   3: {  // 準備フェーズ
-    totalTime: 10000,
+    totalTime: PH3_TIME_LIMIT,
     check: (r) =>{
       console.log("3rd phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > 10000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > PH3_TIME_LIMIT){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "4"
         r["absStartTime"] = Date.now()
-        r["absEndTime"] = Date.now() + 180000
-        r["totalTime"] = 180000
+        r["absEndTime"] = Date.now() + PH4_TIME_LIMIT
+        r["totalTime"] = PH4_TIME_LIMIT
         r["elapsedTime"] = 0
       }
     }
   },
   4: {  // プレイフェーズ
-    totalTime: 180000,
+    totalTime: PH4_TIME_LIMIT,
     check: (r) =>{
       console.log("4th phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > 180000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > PH4_TIME_LIMIT){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.catchResult = "failed"
         r.winner = "criminal"
         r.status = "5"
