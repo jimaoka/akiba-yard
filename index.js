@@ -35,13 +35,11 @@ const PH4_TIME_LIMIT = 1800 * 1000
 // フェーズの情報
 var phases = {
   1: {  // 開始前フェーズ
-    totalTime: 0,
     check: (r) =>{
       // Nothing
     }
   },
   2: {  // 待機中フェーズ
-    totalTime: PH2_TIME_LIMIT,
     check: (r) =>{
       console.log("2nd phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
@@ -59,8 +57,8 @@ var phases = {
           })
         })
         r["absStartTime"] = Date.now()
-        r["absEndTime"] = Date.now() + PH3_TIME_LIMIT
-        r["totalTime"] = PH3_TIME_LIMIT
+        r["absEndTime"] = Date.now() + r.ph3TotalTime
+        r["totalTime"] = r.ph3TotalTime
         r["elapsedTime"] = 0
         r["positions"] = positions
         r["criminal"] = criminal
@@ -68,25 +66,23 @@ var phases = {
     }
   },
   3: {  // 準備フェーズ
-    totalTime: PH3_TIME_LIMIT,
     check: (r) =>{
       console.log("3rd phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > PH3_TIME_LIMIT){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > r.ph3TotalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "4"
         r["absStartTime"] = Date.now()
-        r["absEndTime"] = Date.now() + PH4_TIME_LIMIT
-        r["totalTime"] = PH4_TIME_LIMIT
+        r["absEndTime"] = Date.now() + r.ph4TotalTime
+        r["totalTime"] = r.ph4TotalTim
         r["elapsedTime"] = 0
       }
     }
   },
   4: {  // プレイフェーズ
-    totalTime: PH4_TIME_LIMIT,
     check: (r) =>{
       console.log("4th phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > PH4_TIME_LIMIT){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > r.ph4TotalTim){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.catchResult = "failed"
         r.winner = "criminal"
         r.status = "5"
@@ -94,7 +90,6 @@ var phases = {
     }
   },
   5: {  //終了フェーズ
-    totalTime: 0,
     check: (r) =>{
       // Nothing
     }
@@ -136,16 +131,25 @@ app.post('/games/:gameid/join', function(request, response) {
       }
     },
     (gameid, r)=>{ // ゲームが存在しない場合
+      var ph3TotalTime = PH3_TIME_LIMIT
+      var ph4TotalTime = PH4_TIME_LIMIT
+      var criminal = ""
+      if(req.ph3TotalTime){ph3TotalTime = req.ph3TotalTime}
+      if(req.ph4TotalTime){ph4TotalTime = req.ph4TotalTime}
+      if(req.criminal){criminal = req.criminal}
       var r = {
         catchResult: "",
         winner: "",
         gameid: gameid,
         members: [req.nickname],
-        criminal: "",
+        criminal: criminal,
         absStartTime: Date.now(),
-        absEndTime: Date.now() + phases["2"].totalTime,
+        absEndTime: Date.now() + PH2_TIME_LIMIT,
         elapsedTime: 0,
-        totalTime: phases["2"].totalTime,
+        totalTime: PH2_TIME_LIMIT,
+        ph3TotalTime: ph3TotalTime,
+        ph4TotalTime: ph4TotalTime,
+        refreshInterval: req.refreshInterval,
         status: "2",
         positions: ""
       }
