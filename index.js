@@ -47,6 +47,7 @@ var phases = {
         console.log("move to 3rd phase")
         r.status = "3"
         var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
+        if(r.criminal != ""){criminal = r.criminal}
         var positions = []
         r.members.forEach(function(v){
           positions.push({
