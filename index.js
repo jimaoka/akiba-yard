@@ -260,7 +260,7 @@ app.post('/games/:gameid/catch', function(request, response) {
             if(closest>distance){closest=distance}
           }
         })
-        r.closestDistance = closest
+        r.catchResult.distance = closest
         r.catchResult.nickname = req.nickname
         r.catchResult.timestamp = Date.now()
         if(closest < 25){
