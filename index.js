@@ -74,7 +74,7 @@ var phases = {
         r.status = "4"
         r["absStartTime"] = Date.now()
         r["absEndTime"] = Date.now() + r.ph4TotalTime
-        r["totalTime"] = r.ph4TotalTim
+        r["totalTime"] = r.ph4TotalTime
         r["elapsedTime"] = 0
       }
     }
