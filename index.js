@@ -135,8 +135,8 @@ app.post('/games/:gameid/join', function(request, response) {
       var ph3TotalTime = PH3_TIME_LIMIT
       var ph4TotalTime = PH4_TIME_LIMIT
       var criminal = ""
-      if(req.ph3TotalTime){ph3TotalTime = req.ph3TotalTime}
-      if(req.ph4TotalTime){ph4TotalTime = req.ph4TotalTime}
+      if(req.ph3TotalTime){ph3TotalTime = Number(req.ph3TotalTime)}
+      if(req.ph4TotalTime){ph4TotalTime = Number(req.ph4TotalTime)}
       if(req.criminal){criminal = req.criminal}
       var r = {
         catchResult: "",
