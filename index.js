@@ -84,7 +84,7 @@ var phases = {
       console.log("4th phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
       if(r["elapsedTime"] > r.ph4TotalTim){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
-        r.catchResult = "failed"
+        r.catchResult.result = "failed"
         r.winner = "criminal"
         r.status = "5"
       }
@@ -139,7 +139,7 @@ app.post('/games/:gameid/join', function(request, response) {
       if(req.ph4TotalTime){ph4TotalTime = Number(req.ph4TotalTime)}
       if(req.criminal){criminal = req.criminal}
       var r = {
-        catchResult: "",
+        catchResult: {nickname: "", result: "", timestamp: 0},
         winner: "",
         gameid: gameid,
         members: [req.nickname],
@@ -261,8 +261,10 @@ app.post('/games/:gameid/catch', function(request, response) {
           }
         })
         r.closestDistance = closest
+        r.catchResult.nickname = req.nickname
+        r.catchResult.timestamp = Date.now()
         if(closest < 25){
-          r.catchResult = "success"
+          r.catchResult.result = "success"
           r.winner = "police"
           r.status = "5"
         } else {
