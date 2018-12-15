@@ -157,7 +157,7 @@ var getQuantumPos = function(pos, nickname) {
   var latDash = p.lat + deltaX * rand1 * meterToLat
   var lonDash = p.lon + deltaX * rand2 * meterToLon
   console.log( {t:t, p:p, deltaT:deltaT, tDash:tDash, pDash:pDash, deltaP:deltaP, v:v, deltaX:deltaX, latDash:latDash, lonDash:lonDash} )
-  return {lat: latDash, lon: lonDash, nickname: nickname, timestamp: pos.timestamp}
+  return {lat: latDash, lon: lonDash, nickname: nickname, timestamp: p.timestamp}
 }
 
 // 最新の位置情報を取得する
