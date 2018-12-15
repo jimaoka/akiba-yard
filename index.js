@@ -113,7 +113,7 @@ var getLatestPos = function(r){
   var ret = {positions: []}
   var positions = r.positions
   positions.forEach(function(v){
-    var latestPos = {timestamp:0, lat: 0, lon: 0}
+    var latestPos = {nickname: "", timestamp:0, lat: 0, lon: 0}
     v.pos.forEach(function(v2){
       if(v2.timestamp > latestPos.timestamp){
         latestPos = {nickname: v.nickname, timestamp: v2.timestamp, lat: v2.lat, lon: v2.lon}
