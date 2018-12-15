@@ -282,7 +282,7 @@ app.post('/games/:gameid/catch', function(request, response) {
           r.winner = "police"
           r.status = "5"
         } else {
-          r.catchResult = "failed"
+          r.catchResult.result = "failed"
         }
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
           delete r['positions']
