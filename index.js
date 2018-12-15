@@ -137,18 +137,18 @@ var getQuantumPos = function(pos, nickname) {
   var deltaT = 60000
   var tDash = t - deltaT
   var pDash = getClosestPos(pos, nickname, tDash)
-  /* 自分でやったやつ
+  // 自分でやったやつ
   var deltaP = geolib.getDistance(
     {latitude: p.lat, longitude: p.lon},
     {latitude: pDash.lat, longitude: pDash.lon}
   )
   var v = deltaP / (deltaT / 10000)
-  */
+  /*
   p.time = p.timestamp
   pDash.time = pDash.timestamp
   var v = geolib.getSpeed(p, pDash, {unit: 'mps'})
+  */
   if( v < 0.4) { v = 0.4 }
-  console.log(v)
   var deltaX = 20 / v
   var meterToLat = 0.000008983148616 // メートルに掛けると緯度出る係数
   var meterToLon = 0.000010966382364 // メートルに掛けると経度出る係数
@@ -156,7 +156,8 @@ var getQuantumPos = function(pos, nickname) {
   var rand2 = Math.random() * 2 - 1.0
   var latDash = p.lat + deltaX * rand1 * meterToLat
   var lonDash = p.lon + deltaX * rand2 * meterToLon
-  return {lat: latDash, lon: lonDash, nickname: nickname}
+  console.log( {t:t, p:p, deltaT:deltaT, tDash:tDash, pDash:pDash, deltaP:deltaP, v:v, deltaX:deltaX, latDash:latDash, lonDash:lonDash} )
+  return {lat: latDash, lon: lonDash, nickname: nickname, timestamp: pos.timestamp}
 }
 
 // 最新の位置情報を取得する
