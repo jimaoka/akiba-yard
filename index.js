@@ -250,6 +250,27 @@ app.get('/games/:gameid/position', function(request, response) {
   )
 })
 
+// /games/:gameid/position/all (GET)
+app.get('/games/:gameid/position/all', function(request, response) {
+  var req = request.body
+  console.log(req)
+  processGame(
+    request.params.gameid,
+    (gameid, r)=>{ // ゲームが存在した場合
+      collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        delete r['_id']
+        var allPos = {positions: r.positions}
+        console.log(allPos)
+        response.send(allPos)
+      })
+    },
+    (gameid, r)=>{ // ゲームが存在しない場合
+      response.status(404)
+      response.send({ error: "Game Not Found" })
+    }
+  )
+})
+
 // /games/:gameid/catch (POST)
 app.post('/games/:gameid/catch', function(request, response) {
   var req = request.body
