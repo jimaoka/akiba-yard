@@ -139,7 +139,7 @@ app.post('/games/:gameid/join', function(request, response) {
       if(req.ph4TotalTime){ph4TotalTime = Number(req.ph4TotalTime)}
       if(req.criminal){criminal = req.criminal}
       var r = {
-        catchResult: {nickname: "", result: "", timestamp: 0},
+        catchResult: {nickname: "", result: "", timestamp: 0, distance: 99999},
         winner: "",
         gameid: gameid,
         members: [req.nickname],
@@ -278,7 +278,7 @@ app.post('/games/:gameid/catch', function(request, response) {
         })
       } else {  // ゲームフェーズではない場合
         response.status(404)
-        response.send({ error: "Active Game Not Found" })  
+        response.send({ error: "Active Game Not Found" })
       }
     },
     (gameid, r)=>{ // ゲームが存在しない場合
