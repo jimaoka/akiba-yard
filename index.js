@@ -123,8 +123,9 @@ var getLatestPos = function(pos, nickname) {
 var getClosestPos = function(pos, nickname, timestamp) {
   var closestPos = {nickname: "", timestamp:0, lat: 0, lon: 0, timeDiff: 999999999999}
   pos.forEach(function(v){
-    if( closestPos.timeDiff > Math.abs(v.timestamp - timestamp)){
-      closestPos = {nickname: nickname, timestamp: v.timestamp, lat: v.lat, lon: v.lon}
+    var timeDiff = Math.abs(v.timestamp - timestamp)
+    if( closestPos.timeDiff > timeDiff){
+      closestPos = {nickname: nickname, timestamp: v.timestamp, lat: v.lat, lon: v.lon, timeDiff: timeDiff}
     }
   })
   return closestPos
