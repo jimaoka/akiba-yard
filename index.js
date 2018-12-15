@@ -108,18 +108,63 @@ var processGame = function(gameid, ifGame, ifNoGame){
   })
 }
 
+// 配列から最新の位置情報を比較して取ってくる
+var getLatestPos = function(pos, nickname) {
+  var latestPos = {nickname: "", timestamp:0, lat: 0, lon: 0}
+  pos.forEach(function(v){
+    if(v.timestamp > latestPos.timestamp){
+      latestPos = {nickname: nickname, timestamp: v.timestamp, lat: v.lat, lon: v.lon}
+    }
+  })
+  return latestPos
+}
+
+// 指定した時間に一番近い位置情報を返す
+var getClosestPos(pos, nickname, timestamp) {
+
+}
+
+// 配列からQuantumの位置情報配列を返す
+var getQuantumPos = function(pos, nickname) {
+  var t = Date.now()
+  var p = getLatestPos(pos, nickname)
+  var deltaT = 60000
+  var tDash = t - deltaT
+  var pDash = getClosestPos(pos, nickname, tDash)
+  /* 自分でやったやつ
+  var deltaP = geolib.getDistance(
+    {latitude: p.lat, longitude: p.lon},
+    {latitude: pDash.lat, longitude: pDash.lon}
+  )
+  var v = deltaP / (deltaT / 10000)
+  */
+  p.time = p.timestamp
+  pDash.time = pDash.timestamp
+  var v = geolib.getSpeed(p, pDash, {unit: 'mps'})
+  var deltaX = 20 / v
+  var meterToLat = 0.000008983148616 // メートルに掛けると緯度出る係数
+  var meterToLon = 0.000010966382364 // メートルに掛けると経度出る係数
+  var rand1 = Math.random()
+  var rand2 = Math.random()
+  var latDash = p.lat + deltaX * rand1 * meterToLat
+  var lonDash = p.lon + deltaX * rand2 * meterToLon
+  return {lat: latDash, lon: lonDash, nickname: nickname}
+}
+
 // 最新の位置情報を取得する
-var getLatestPos = function(r){
+var getPositions = function(r, quantum){
   var ret = {positions: []}
   var positions = r.positions
   positions.forEach(function(v){
-    var latestPos = {nickname: "", timestamp:0, lat: 0, lon: 0}
-    v.pos.forEach(function(v2){
-      if(v2.timestamp > latestPos.timestamp){
-        latestPos = {nickname: v.nickname, timestamp: v2.timestamp, lat: v2.lat, lon: v2.lon}
+    if(v.nickname == r.criminal && quantum){
+      // Quantum!!!
+      for (var i = 0; i < 100; i++) {
+        ret.positions.push(getQuantumPos(v.pos, v.nickname))
       }
-    })
-    ret.positions.push(latestPos)
+    } else {
+      // Classic
+      ret.positions.push(getLatestPos(v.pos, v.nickname))
+    }
   })
   return ret
 }
@@ -238,7 +283,7 @@ app.get('/games/:gameid/position', function(request, response) {
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
         delete r['_id']
-        var latestPos = getLatestPos(r)
+        var latestPos = getPositions(r, true)
         console.log(latestPos)
         response.send(latestPos)
       })
@@ -279,7 +324,7 @@ app.post('/games/:gameid/catch', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       if(r.status == "4"){  // プレイフェーズ中の場合
-        var latestPos = getLatestPos(r)
+        var latestPos = getPositions(r, false)
         var positions = latestPos.positions
         var criminalPos = {}
         positions.forEach(function(v){
