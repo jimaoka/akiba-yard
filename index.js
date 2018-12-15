@@ -239,7 +239,7 @@ app.get('/games/:gameid/position', function(request, response) {
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
         delete r['_id']
         var latestPos = getLatestPos(r)
-        console.log(r)
+        console.log(latestPos)
         response.send(latestPos)
       })
     },
