@@ -52,9 +52,7 @@ var phases = {
         r.members.forEach(function(v){
           positions.push({
             nickname: v,
-            lat: "",
-            lon: "",
-            timestamp: ""
+            pos: []
           })
         })
         r["absStartTime"] = Date.now()
@@ -108,6 +106,22 @@ var processGame = function(gameid, ifGame, ifNoGame){
       ifNoGame(gameid, r)
     }
   })
+}
+
+// 最新の位置情報を取得する
+var getLatestPos = function(r){
+  var ret = {positions: []}
+  var positions = r.positions
+  positions.forEach(function(v){
+    var latestPos = {nickname: "", timestamp:0, lat: 0, lon: 0}
+    v.pos.forEach(function(v2){
+      if(v2.timestamp > latestPos.timestamp){
+        latestPos = {nickname: v.nickname, timestamp: v2.timestamp, lat: v2.lat, lon: v2.lon}
+      }
+    })
+    ret.positions.push(latestPos)
+  })
+  return ret
 }
 
 // /games/:gameid/join (POST)
@@ -194,9 +208,7 @@ app.post('/games/:gameid/position', function(request, response) {
       if(r){  // 準備フェーズかゲームフェーズ中の場合
         r.positions.map( function(v){
           if(v.nickname == req.nickname){
-            v.timestamp = req.timestamp
-            v.lat = req.lat
-            v.lon = req.lon
+            v.pos.push({timestamp: req.timestamp, lat: req.lat, lon: req.lon})
           }
         })
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
@@ -226,8 +238,9 @@ app.get('/games/:gameid/position', function(request, response) {
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
         delete r['_id']
+        var latestPos = getLatestPos(r)
         console.log(r)
-        response.send(r)
+        response.send(latestPos)
       })
     },
     (gameid, r)=>{ // ゲームが存在しない場合
@@ -245,7 +258,8 @@ app.post('/games/:gameid/catch', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       if(r.status == "4"){  // プレイフェーズ中の場合
-        var positions = r.positions
+        var latestPos = getLatestPos(r)
+        var positions = latestPos.positions
         var criminalPos = {}
         positions.forEach(function(v){
           if(v.nickname == r.criminal){criminalPos = v}
