@@ -167,7 +167,7 @@ var getPositions = function(r, quantum){
   positions.forEach(function(v){
     if(v.nickname == r.criminal && quantum){
       // Quantum!!!
-      for (var i = 0; i < 100; i++) {
+      for (var i = 0; i < 1000; i++) {
         ret.positions.push(getQuantumPos(v.pos, v.nickname))
       }
     } else {
