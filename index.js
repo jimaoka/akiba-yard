@@ -28,23 +28,26 @@ var collection = function(name, options) {
   return database.collection(name, options)
 }
 
+const PH2_TIME_LIMIT = 60 * 1000
+const PH3_TIME_LIMIT = 600 * 1000
+const PH4_TIME_LIMIT = 1800 * 1000
+
 // フェーズの情報
 var phases = {
   1: {  // 開始前フェーズ
-    totalTime: 0,
     check: (r) =>{
       // Nothing
     }
   },
   2: {  // 待機中フェーズ
-    totalTime: 60000,
     check: (r) =>{
       console.log("2nd phase check")
-      r["elaspedTime"] = Date.now() - r.absStartTime
-      if(r["elaspedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      r["elapsedTime"] = Date.now() - r.absStartTime
+      if(r["elapsedTime"] > PH2_TIME_LIMIT){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         console.log("move to 3rd phase")
         r.status = "3"
         var criminal = r.members[Math.floor( Math.random() * (r.members.length))]
+        if(r.criminal != ""){criminal = r.criminal}
         var positions = []
         r.members.forEach(function(v){
           positions.push({
@@ -55,42 +58,39 @@ var phases = {
           })
         })
         r["absStartTime"] = Date.now()
-        r["absEndTime"] = Date.now() + 60000
-        r["totalTime"] = 60000
-        r["elaspedTime"] = 0
+        r["absEndTime"] = Date.now() + r.ph3TotalTime
+        r["totalTime"] = r.ph3TotalTime
+        r["elapsedTime"] = 0
         r["positions"] = positions
         r["criminal"] = criminal
       }
     }
   },
   3: {  // 準備フェーズ
-    totalTime: 60000,
     check: (r) =>{
       console.log("3rd phase check")
-      r["elaspedTime"] = Date.now() - r.absStartTime
-      if(r["elaspedTime"] > 60000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      r["elapsedTime"] = Date.now() - r.absStartTime
+      if(r["elapsedTime"] > r.ph3TotalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.status = "4"
         r["absStartTime"] = Date.now()
-        r["absEndTime"] = Date.now() + 180000
-        r["totalTime"] = 180000
-        r["elaspedTime"] = 0
+        r["absEndTime"] = Date.now() + r.ph4TotalTime
+        r["totalTime"] = r.ph4TotalTime
+        r["elapsedTime"] = 0
       }
     }
   },
   4: {  // プレイフェーズ
-    totalTime: 180000,
     check: (r) =>{
       console.log("4th phase check")
-      r["elaspedTime"] = Date.now() - r.absStartTime
-      if(r["elaspedTime"] > 180000){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
-        r.catchResult = "failed"
+      r["elapsedTime"] = Date.now() - r.absStartTime
+      if(r["elapsedTime"] > r.ph4TotalTim){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+        r.catchResult.result = "failed"
         r.winner = "criminal"
         r.status = "5"
       }
     }
   },
   5: {  //終了フェーズ
-    totalTime: 0,
     check: (r) =>{
       // Nothing
     }
@@ -113,34 +113,52 @@ var processGame = function(gameid, ifGame, ifNoGame){
 // /games/:gameid/join (POST)
 app.post('/games/:gameid/join', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       if(r.status != "2"){  // ステータスが異なる場合
+        delete r['positions']
+        delete r['_id']
         response.send(r)
       } else if(r){  // 募集中のゲームが存在する場合
         r.members.push(req.nickname)
         collection(COLNAME).updateOne({gameid:gameid}, {$set: r}).then(function(r2) {
+          delete r['positions']
+          delete r['_id']
+          console.log(r)
           response.send(r)
         })
       }
     },
     (gameid, r)=>{ // ゲームが存在しない場合
-      var game = {
-        catchResult: "",
+      var ph3TotalTime = PH3_TIME_LIMIT
+      var ph4TotalTime = PH4_TIME_LIMIT
+      var criminal = ""
+      if(req.ph3TotalTime){ph3TotalTime = Number(req.ph3TotalTime)}
+      if(req.ph4TotalTime){ph4TotalTime = Number(req.ph4TotalTime)}
+      if(req.criminal){criminal = req.criminal}
+      var r = {
+        catchResult: {nickname: "", result: "", timestamp: 0, distance: 99999},
         winner: "",
         gameid: gameid,
         members: [req.nickname],
-        criminal: "",
+        criminal: criminal,
         absStartTime: Date.now(),
-        absEndTime: Date.now() + phases["2"].totalTime,
-        elaspedTime: "0",
-        totalTime: phases["2"].totalTime,
+        absEndTime: Date.now() + PH2_TIME_LIMIT,
+        elapsedTime: 0,
+        totalTime: PH2_TIME_LIMIT,
+        ph3TotalTime: ph3TotalTime,
+        ph4TotalTime: ph4TotalTime,
+        refreshInterval: req.refreshInterval,
         status: "2",
         positions: ""
       }
-      collection(COLNAME).insertOne(game).then(function(r2) {
-        response.send(game)
+      collection(COLNAME).insertOne(r).then(function(r2) {
+        delete r['positions']
+        delete r['_id']
+        console.log(r)
+        response.send(r)
       })
     }
   )
@@ -153,6 +171,9 @@ app.get('/games/:gameid/info', function(request, response) {
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        delete r['positions']
+        delete r['_id']
+        console.log(r)
         response.send(r)
       })
     },
@@ -166,10 +187,11 @@ app.get('/games/:gameid/info', function(request, response) {
 // /games/:gameid/position (POST)
 app.post('/games/:gameid/position', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
-      if(r.status == "3" || r.status == "4"){  // 準備フェーズかゲームフェーズ中の場合
+      if(r){  // 準備フェーズかゲームフェーズ中の場合
         r.positions.map( function(v){
           if(v.nickname == req.nickname){
             v.timestamp = req.timestamp
@@ -178,6 +200,9 @@ app.post('/games/:gameid/position', function(request, response) {
           }
         })
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+          delete r['positions']
+          delete r['_id']
+          console.log(r)
           response.send(r)
         })
       } else {  // ゲームフェーズではない場合
@@ -195,10 +220,13 @@ app.post('/games/:gameid/position', function(request, response) {
 // /games/:gameid/position (GET)
 app.get('/games/:gameid/position', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+        delete r['_id']
+        console.log(r)
         response.send(r)
       })
     },
@@ -212,6 +240,7 @@ app.get('/games/:gameid/position', function(request, response) {
 // /games/:gameid/catch (POST)
 app.post('/games/:gameid/catch', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
@@ -231,20 +260,25 @@ app.post('/games/:gameid/catch', function(request, response) {
             if(closest>distance){closest=distance}
           }
         })
-        r.closestDistance = closest
+        r.catchResult.distance = closest
+        r.catchResult.nickname = req.nickname
+        r.catchResult.timestamp = Date.now()
         if(closest < 25){
-          r.catchResult = "success"
+          r.catchResult.result = "success"
           r.winner = "police"
           r.status = "5"
         } else {
           r.catchResult = "failed"
         }
         collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
+          delete r['positions']
+          delete r['_id']
+          console.log(r)
           response.send(r)
         })
       } else {  // ゲームフェーズではない場合
         response.status(404)
-        response.send({ error: "Active Game Not Found" })  
+        response.send({ error: "Active Game Not Found" })
       }
     },
     (gameid, r)=>{ // ゲームが存在しない場合
@@ -257,6 +291,7 @@ app.post('/games/:gameid/catch', function(request, response) {
 // /games/:gameid/abort (POST)
 app.post('/games/:gameid/abort', function(request, response) {
   var req = request.body
+  console.log(req)
   processGame(
     request.params.gameid,
     (gameid, r)=>{ // ゲームが存在した場合
