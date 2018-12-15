@@ -81,7 +81,7 @@ var phases = {
     check: (r) =>{
       console.log("4th phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > r.ph4TotalTim){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > r.ph4TotalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.catchResult.result = "failed"
         r.winner = "criminal"
         r.status = "5"
