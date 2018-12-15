@@ -149,7 +149,7 @@ var getQuantumPos = function(pos, nickname) {
   var v = geolib.getSpeed(p, pDash, {unit: 'mps'})
   */
   if( v < 0.4) { v = 0.4 }
-  var deltaX = 20 / v
+  var deltaX = 40 / v
   var meterToLat = 0.000008983148616 // メートルに掛けると緯度出る係数
   var meterToLon = 0.000010966382364 // メートルに掛けると経度出る係数
   var rand1 = Math.random() * 2 - 1.0
