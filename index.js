@@ -120,8 +120,14 @@ var getLatestPos = function(pos, nickname) {
 }
 
 // 指定した時間に一番近い位置情報を返す
-var getClosestPos(pos, nickname, timestamp) {
-
+var getClosestPos = function(pos, nickname, timestamp) {
+  var closestPos = {nickname: "", timestamp:0, lat: 0, lon: 0, timeDiff: 999999999999}
+  pos.forEach(function(v){
+    if( timeDiff > Math.abs(v.timestamp - timestamp)){
+      closestPos = {nickname: nickname, timestamp: v.timestamp, lat: v.lat, lon: v.lon}
+    }
+  })
+  return closestPos
 }
 
 // 配列からQuantumの位置情報配列を返す
