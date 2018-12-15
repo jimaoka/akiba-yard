@@ -147,11 +147,13 @@ var getQuantumPos = function(pos, nickname) {
   p.time = p.timestamp
   pDash.time = pDash.timestamp
   var v = geolib.getSpeed(p, pDash, {unit: 'mps'})
+  if( v < 0.4) { v = 0.4 }
+  console.log(v)
   var deltaX = 20 / v
   var meterToLat = 0.000008983148616 // メートルに掛けると緯度出る係数
   var meterToLon = 0.000010966382364 // メートルに掛けると経度出る係数
-  var rand1 = Math.random()
-  var rand2 = Math.random()
+  var rand1 = Math.random() * 2 - 1.0
+  var rand2 = Math.random() * 2 - 1.0
   var latDash = p.lat + deltaX * rand1 * meterToLat
   var lonDash = p.lon + deltaX * rand2 * meterToLon
   return {lat: latDash, lon: lonDash, nickname: nickname}
@@ -164,7 +166,7 @@ var getPositions = function(r, quantum){
   positions.forEach(function(v){
     if(v.nickname == r.criminal && quantum){
       // Quantum!!!
-      for (var i = 0; i < 100; i++) {
+      for (var i = 0; i < 10; i++) {
         ret.positions.push(getQuantumPos(v.pos, v.nickname))
       }
     } else {
