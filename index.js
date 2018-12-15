@@ -142,7 +142,7 @@ var getQuantumPos = function(pos, nickname, deltaT) {
     {latitude: p.lat, longitude: p.lon},
     {latitude: pDash.lat, longitude: pDash.lon}
   )
-  var v = deltaP / (deltaT / 10000)
+  var v = deltaP / (deltaT / 1000)
   /*
   p.time = p.timestamp
   pDash.time = pDash.timestamp
