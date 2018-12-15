@@ -28,7 +28,7 @@ var collection = function(name, options) {
   return database.collection(name, options)
 }
 
-const PH2_TIME_LIMIT = 60 * 1000
+const PH2_TIME_LIMIT = 10 * 1000
 const PH3_TIME_LIMIT = 600 * 1000
 const PH4_TIME_LIMIT = 1800 * 1000
 
@@ -81,7 +81,7 @@ var phases = {
     check: (r) =>{
       console.log("4th phase check")
       r["elapsedTime"] = Date.now() - r.absStartTime
-      if(r["elapsedTime"] > r.ph4TotalTim){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
+      if(r["elapsedTime"] > r.ph4TotalTime){  // totalTime以上経過してたら犯人を決めて準備フェーズへ
         r.catchResult.result = "failed"
         r.winner = "criminal"
         r.status = "5"
@@ -239,7 +239,7 @@ app.get('/games/:gameid/position', function(request, response) {
       collection(COLNAME).updateOne({gameid: r.gameid}, {$set: r}).then(function(r2) {
         delete r['_id']
         var latestPos = getLatestPos(r)
-        console.log(r)
+        console.log(latestPos)
         response.send(latestPos)
       })
     },
