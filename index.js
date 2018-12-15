@@ -131,10 +131,10 @@ var getClosestPos = function(pos, nickname, timestamp) {
 }
 
 // 配列からQuantumの位置情報配列を返す
-var getQuantumPos = function(pos, nickname) {
+var getQuantumPos = function(pos, nickname, deltaT) {
   var t = Date.now()
   var p = getLatestPos(pos, nickname)
-  var deltaT = 60000
+  var deltaT = deltaT
   var tDash = t - deltaT
   var pDash = getClosestPos(pos, nickname, tDash)
   // 自分でやったやつ
@@ -168,7 +168,7 @@ var getPositions = function(r, quantum){
     if(v.nickname == r.criminal && quantum){
       // Quantum!!!
       for (var i = 0; i < 3; i++) {
-        ret.positions.push(getQuantumPos(v.pos, v.nickname))
+        ret.positions.push(getQuantumPos(v.pos, v.nickname, r.refreshInterval))
       }
     } else {
       // Classic
